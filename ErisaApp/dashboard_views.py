@@ -103,8 +103,8 @@ def admin_dashboard(request):
     
     # Most Active Users (by notes and flags)
     active_users = User.objects.annotate(
-        note_count=Count('claimnote'),
-        flag_count=Count('claimflag'),
+        note_count=Count('claimnote', distinct=True),
+        flag_count=Count('claimflag', distinct=True),
         total_activity=F('note_count') + F('flag_count')
     ).filter(total_activity__gt=0).order_by('-total_activity')[:5]
     
