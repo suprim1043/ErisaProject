@@ -1,0 +1,1843 @@
+{% load url_extras %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Claims Management - ERISA Recovery</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+      defer
+    ></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background-color: #f8f9fa;
+        line-height: 1.5;
+      }
+
+
+      body::-webkit-scrollbar {
+        display: none;
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      .main-container {
+        display: flex;
+        height: 100vh;
+        gap: 0;
+      }
+
+      .left-panel {
+        flex: 1;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .right-panel {
+        width: 30% !important;
+        background: white;
+        border-left: 1px solid #e5e5e5;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+
+
+
+      }
+    
+      /* Header */
+      .header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e5e5;
+        background: white;
+      }
+
+      .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+      }
+
+      .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 0.25rem;
+      }
+
+      .header-title p {
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      /* User Authentication UI */
+      .header-user {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+      }
+
+      /* Navigation Buttons */
+      .nav-buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .nav-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        background: #f8f9fa;
+        color: #374151;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        border: 1px solid #e5e7eb;
+        transition: all 0.15s ease;
+      }
+
+      .nav-btn:hover {
+        background: #e5e7eb;
+        color: #1f2937;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .nav-btn.dashboard-btn {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border-color: #2563eb;
+      }
+
+      .nav-btn.dashboard-btn:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: white;
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+      }
+
+      .nav-btn svg {
+        flex-shrink: 0;
+      }
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        position: relative;
+      }
+
+      .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      .user-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+      }
+
+      .user-name {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .user-role {
+        font-size: 0.75rem;
+        color: #6b7280;
+      }
+
+      .user-menu {
+        position: relative;
+      }
+
+      .user-menu-btn {
+        background: none;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #6b7280;
+        transition: all 0.15s ease;
+      }
+
+      .user-menu-btn:hover {
+        background: #f3f4f6;
+        color: #374151;
+      }
+
+      .user-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        min-width: 180px;
+        z-index: 50;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.15s ease;
+      }
+
+      .user-dropdown.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        color: #374151;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.15s ease;
+      }
+
+      .dropdown-item:hover {
+        background: #f3f4f6;
+        color: #1f2937;
+      }
+
+      .dropdown-item.logout {
+        color: #dc2626;
+      }
+
+      .dropdown-item.logout:hover {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .dropdown-divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 0.5rem 0;
+      }
+
+      /* Auth Buttons (for non-authenticated users) */
+      .auth-buttons {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+      }
+
+      .auth-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.15s ease;
+      }
+
+      .login-btn {
+        color: #374151;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+      }
+
+      .login-btn:hover {
+        background: #e5e7eb;
+        color: #1f2937;
+      }
+
+      .signup-btn {
+        color: white;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      }
+
+      .signup-btn:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-1px);
+      }
+
+      /* Search and Filter Panel */
+      .search-panel {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 1px solid #dee2e6;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .search-form {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto auto;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 0;
+      }
+
+      .search-form button,
+      .search-form .clear-button {
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .search-group {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .search-group.small {
+        min-width: 100px;
+      }
+
+      .search-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.25rem;
+      }
+
+      .search-input {
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        background: white;
+        transition: all 0.15s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+      }
+
+      .search-button {
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        min-width: 100px;
+      }
+
+      .search-button:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+      }
+
+      .clear-button {
+        padding: 0.75rem 1.5rem;
+        background: #6b7280;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-decoration: none;
+        display: inline-block;
+        box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
+        min-width: 100px;
+        text-align: center;
+      }
+
+      .clear-button:hover {
+        background: #4b5563;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+      }
+
+      /* Pagination */
+      .pagination-container {
+        padding: 1rem 1.5rem;
+        background: white;
+        border-top: 1px solid #e5e5e5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .pagination-info {
+        font-size: 0.9rem;
+        color: #6b7280;
+      }
+
+      .pagination-controls {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .pagination-button {
+        padding: 0.6rem 1rem;
+        border: 1px solid #d1d5db;
+        background: white;
+        color: #374151;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-decoration: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+
+      .pagination-button:hover {
+        background: #f8f9fa;
+        border-color: #9ca3af;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .pagination-button.active {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border-color: #3b82f6;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+      }
+
+      .pagination-button.disabled {
+        background: #f3f4f6;
+        color: #9ca3af;
+        cursor: not-allowed;
+        border-color: #e5e5e5;
+      }
+
+      .pagination-button.disabled:hover {
+        background: #f3f4f6;
+        border-color: #e5e5e5;
+      }
+
+      /* Claims Table */
+      .claims-container {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .table-container {
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      .claims-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .claims-table thead {
+        position: sticky;
+        top: 0;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        z-index: 10;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .claims-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 700;
+        font-size: 0.8rem;
+        color: #374151;
+        border-bottom: 2px solid #dee2e6;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .claims-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 0.9rem;
+        vertical-align: middle;
+      }
+
+      .claims-table tbody tr {
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .claims-table tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .claims-table tbody tr.selected {
+        background-color: #eff6ff;
+        border-left: 3px solid #3b82f6;
+      }
+
+      /* Status badges */
+      .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: capitalize;
+      }
+
+      .status-pending,
+      .status-Pending {
+        background-color: #fef3c7;
+        color: #92400e;
+      }
+
+      .status-paid,
+      .status-Paid {
+        background-color: #d1fae5;
+        color: #065f46;
+      }
+
+      .status-denied,
+      .status-Denied {
+        background-color: #fee2e2;
+        color: #991b1b;
+      }
+
+      .status-under-review,
+      .status-Under-Review,
+      .status-under\\ review,
+      .status-Under\\ Review {
+        background-color: #dbeafe;
+        color: #1e40af;
+      }
+
+      /* Additional status styling */
+      .status-badge {
+        font-weight: 500;
+        letter-spacing: 0.025em;
+        border: 1px solid transparent;
+      }
+
+      .status-pending,
+      .status-Pending {
+        border-color: #f59e0b;
+      }
+
+      .status-paid,
+      .status-Paid {
+        border-color: #10b981;
+      }
+
+      .status-denied,
+      .status-Denied {
+        border-color: #ef4444;
+      }
+
+      .status-under-review,
+      .status-Under-Review,
+      .status-under\\ review,
+      .status-Under\\ Review {
+        border-color: #3b82f6;
+      }
+
+      /* Action Icons */
+      .action-icons {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .action-icon {
+        position: relative;
+        background: none;
+        border: none;
+        padding: 0.4rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .action-icon:hover {
+        background: #f3f4f6;
+        color: #374151;
+        transform: translateY(-1px);
+      }
+
+      .view-icon:hover {
+        color: #3b82f6;
+        background: #eff6ff;
+      }
+
+      .flag-icon:hover {
+        color: #f59e0b;
+        background: #fffbeb;
+      }
+
+      .note-icon:hover {
+        color: #10b981;
+        background: #ecfdf5;
+      }
+
+      .flag-count,
+      .note-count {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: #ef4444;
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 600;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+
+      .note-count {
+        background: #10b981;
+      }
+
+      /* Modal Styles */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .modal {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        transform: scale(0.9) translateY(-20px);
+        transition: all 0.3s ease;
+      }
+
+      .modal-overlay.active .modal {
+        transform: scale(1) translateY(0);
+      }
+
+      .modal-header {
+        padding: 1.5rem 1.5rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+      }
+
+      .modal-body {
+        padding: 1.5rem;
+      }
+
+      .modal-footer {
+        padding: 1rem 1.5rem 1.5rem;
+        border-top: 1px solid #e5e5e5;
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+      }
+
+      .form-group {
+        margin-bottom: 1rem;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.5rem;
+      }
+
+      .form-input,
+      .form-textarea,
+      .form-select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: border-color 0.15s ease;
+        font-family: inherit;
+      }
+
+      .form-textarea {
+        resize: vertical;
+        min-height: 100px;
+      }
+
+      .form-input:focus,
+      .form-textarea:focus,
+      .form-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+      }
+
+      .btn-secondary:hover {
+        background: #e5e7eb;
+        border-color: #9ca3af;
+      }
+
+      .close-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 50%;
+        transition: all 0.15s ease;
+      }
+
+      .close-btn:hover {
+        background: #f3f4f6;
+        color: #374151;
+      }
+
+      /* Amount styling */
+      .amount {
+        font-weight: 600;
+        text-align: right;
+      }
+
+      .amount.positive {
+        color: #059669;
+      }
+
+      .amount.negative {
+        color: #dc2626;
+      }
+
+      /* Claim ID styling */
+      .claim-id {
+        color: #3b82f6;
+        font-weight: 500;
+      }
+
+      /* Detail Panel */
+      .detail-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .detail-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e5e5;
+        background: #f8f9fa;
+      }
+
+      .detail-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+        max-height: calc(100vh - 120px);
+
+      }
+
+      .detail-section {
+        margin-bottom: 1.5rem;
+      }
+
+      .detail-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .notes-section {
+        max-height: 300px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+      }
+
+      .notes-section::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .notes-section::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+
+      .notes-section::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+      }
+
+      .notes-section::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
+
+      .detail-content::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .detail-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+
+      .detail-content::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+      }
+
+      .detail-content::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
+
+
+      .detail-section h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .detail-item {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .detail-label {
+        font-size: 0.8rem;
+        color: #6b7280;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+      }
+
+      .detail-value {
+        font-size: 0.9rem;
+        color: #1f2937;
+        font-weight: 500;
+      }
+
+      .detail-value.amount {
+        font-weight: 600;
+      }
+
+      /* CPT Codes */
+      .cpt-codes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      .cpt-code {
+        background: #f3f4f6;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #4b5563;
+      }
+
+      /* Notes Section */
+      .notes-section {
+        margin-top: 0;
+      }
+
+      .note-item {
+        background: #f8f9fa;
+        border-left: 3px solid #e5e5e5;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        border-radius: 0 6px 6px 0;
+      }
+
+      .note-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .note-item.admin {
+        border-left-color: #3b82f6;
+        background: #eff6ff;
+      }
+
+      .note-item.system {
+        border-left-color: #f59e0b;
+        background: #fffbeb;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+      }
+
+      .empty-state p {
+        margin: 0;
+        font-style: italic;
+      }
+
+      .add-note-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+        padding: 0.75rem 1rem;
+        background: transparent;
+        color: #6b7280;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-decoration: none;
+        min-width: auto;
+      }
+
+      .add-note-btn:hover {
+        background: #f9fafb;
+        color: #374151;
+        border-color: #d1d5db;
+        transform: none;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      }
+
+      .add-note-btn:active {
+        background: #f3f4f6;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .add-note-btn svg {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+        color: #9ca3af;
+      }
+
+      .add-note-btn:hover svg {
+        color: #6b7280;
+      }
+
+      /* Quick Actions Section */
+      .quick-actions {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: white;
+        border: 1px solid #e5e7eb;
+
+        border-radius: 12px;
+      }
+
+      .quick-actions h3 {
+        margin: 0 0 1rem 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1f2937;
+        text-align: center;
+      }
+
+      .quick-actions-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .quick-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        background: white;
+        color: #6b7280;
+        border: none;
+        border-right: 1px solid #e5e7eb;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-decoration: none;
+      }
+
+      .quick-action-btn:last-child {
+        border-right: none;
+      }
+
+      .quick-action-btn:hover {
+        background: #f9fafb;
+        color: #374151;
+      }
+
+      .quick-action-btn:active {
+        background: #f3f4f6;
+      }
+
+      .quick-action-btn svg {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+        color: #9ca3af;
+      }
+
+      .quick-action-btn:hover svg {
+        color: #6b7280;
+      }
+
+      .note-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+
+      .note-type {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #6b7280;
+      }
+
+      .note-time {
+        font-size: 0.75rem;
+        color: #9ca3af;
+      }
+
+      .note-content {
+        font-size: 0.85rem;
+        line-height: 1.4;
+        color: #374151;
+      }
+
+      /* Quick Actions */
+      .quick-actions {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e5e5;
+      }
+
+      .quick-actions h4 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.75rem;
+      }
+
+      .action-button {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid #e5e5e5;
+        background: white;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .action-button:hover {
+        background: #f8f9fa;
+        border-color: #d1d5db;
+      }
+
+      .action-button svg {
+        width: 16px;
+        height: 16px;
+        margin-right: 0.5rem;
+      }
+
+      /* Empty state */
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #6b7280;
+        text-align: center;
+      }
+
+      .empty-state svg {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+      }
+
+      /* Loading state */
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        color: #6b7280;
+      }
+
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #e5e5e5;
+        border-top: 2px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 0.5rem;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 1200px) {
+        .search-form {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+        
+        .search-group {
+          min-width: auto;
+        }
+      }
+
+      @media (max-width: 1024px) {
+        .main-container {
+          flex-direction: column;
+          
+        }
+
+        .right-panel {
+          width: 100%;
+          height: 100%;
+        }
+        
+        .claims-table th,
+        .claims-table td {
+          padding: 0.75rem 0.5rem;
+          font-size: 0.8rem;
+        }
+        
+        .pagination-controls {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .search-panel {
+          padding: 1rem;
+        }
+        
+        .pagination-container {
+          flex-direction: column;
+          gap: 1rem;
+          text-align: center;
+        }
+        
+        .claims-table {
+          font-size: 0.8rem;
+        }
+      }
+    </style>
+  </head>
+  <body x-data="claimsApp">
+    <div class="main-container">
+      <!-- Left Panel - Claims List -->
+      <div class="left-panel">
+        <div class="header">
+          <div class="header-content">
+            <div class="header-title">
+              <h1>Claims Management</h1>
+              <p>ERISA Recovery System 
+                {% if search_query or status_filter or insurer_filter or min_billed or max_billed %}
+                  - {{ claims.paginator.count }} result{{ claims.paginator.count|pluralize }} found
+                {% endif %}
+              </p>
+            </div>
+            <div class="header-user">
+              {% if user.is_authenticated %}
+                <!-- Navigation Buttons -->
+                <div class="nav-buttons">
+                  <a href="{% url 'admin_dashboard' %}" class="nav-btn dashboard-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="9" y1="9" x2="9" y2="15"></line>
+                      <line x1="15" y1="9" x2="15" y2="15"></line>
+                      <line x1="9" y1="12" x2="15" y2="12"></line>
+                    </svg>
+                    Dashboard
+                  </a>
+                </div>
+                
+                <!-- User Info -->
+                <div class="user-info">
+                  <div class="user-avatar">
+                    {{ user.first_name|first|default:user.username|first|upper }}
+                  </div>
+                  <div class="user-details">
+                    <div class="user-name">{{ user.first_name|default:user.username }}</div>
+                    <div class="user-role">{{ user.email }}</div>
+                  </div>
+                  <div class="user-menu">
+                    <button class="user-menu-btn" onclick="toggleUserMenu()">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6,9 12,15 18,9"></polyline>
+                      </svg>
+                    </button>
+                    <div class="user-dropdown" id="userDropdown">
+                       <a href="#" class="dropdown-item">
+                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                           <circle cx="12" cy="7" r="4"></circle>
+                         </svg>
+                         Profile
+                       </a>
+                       <a href="#" class="dropdown-item">
+                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                           <circle cx="12" cy="12" r="3"></circle>
+                           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                         </svg>
+                         Settings
+                       </a>
+                       <div class="dropdown-divider"></div>
+                       <a href="{% url 'logout' %}" class="dropdown-item logout">
+                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                           <polyline points="16,17 21,12 16,7"></polyline>
+                           <line x1="21" y1="12" x2="9" y2="12"></line>
+                         </svg>
+                         Sign Out
+                       </a>
+                     </div>
+                  </div>
+                </div>
+              {% else %}
+                <div class="auth-buttons">
+                  <a href="{% url 'login' %}" class="auth-btn login-btn">Sign In</a>
+                  <a href="{% url 'signup' %}" class="auth-btn signup-btn">Sign Up</a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="search-panel">
+          <form class="search-form" method="GET">
+            <div class="search-group">
+              <label for="search" class="search-label">Search</label>
+              <input 
+                type="text" 
+                id="search" 
+                name="search" 
+                class="search-input" 
+                placeholder="Patient name, claim ID, or insurer"
+                value="{{ search_query }}" 
+              />
+            </div>
+            <div class="search-group">
+              <label for="status" class="search-label">Status</label>
+              <select id="status" name="status" class="search-input">
+                <option value="">All Statuses</option>
+                {% for status_value, status_display in status_choices %}
+                <option value="{{ status_value }}" {% if status_filter == status_value %}selected{% endif %}>
+                  {{ status_display }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="search-group">
+              <label for="insurer" class="search-label">Insurer</label>
+              <select id="insurer" name="insurer" class="search-input">
+                <option value="">All Insurers</option>
+                {% for insurer in unique_insurers %}
+                <option value="{{ insurer }}" {% if insurer_filter == insurer %}selected{% endif %}>
+                  {{ insurer }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+           
+            <button type="submit" class="search-button">Search</button>
+            <a href="{% url 'claims_list' %}" class="clear-button">Clear</a>
+          </form>
+        </div>
+
+        <div class="claims-container">
+          <div class="table-container">
+            <table class="claims-table">
+              <thead>
+                <tr>
+                  <th>Claim ID</th>
+                  <th>Patient Name</th>
+                  <th>Billed Amount</th>
+                  <th>Paid Amount</th>
+                  <th>Status</th>
+                  <th>Insurer</th>
+                  <th>Discharge Date</th>
+                  <th style="width: 120px">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for claim in claims %}
+                <tr
+                  class="claim-row"
+                  data-claim-id="{{ claim.claim_id }}"
+                  :class="{ 'selected': selectedClaim === '{{ claim.claim_id }}' }"
+                  hx-get="{% url 'claim_detail' claim.claim_id %}"
+                  hx-target="#claim-detail-content"
+                  hx-trigger="click"
+                  @click="selectedClaim = '{{ claim.claim_id }}'"
+                >
+                  <td>
+                    <span class="claim-id">{{ claim.claim_id }}</span>
+                  </td>
+                  <td>{{ claim.patient_name|default:"N/A" }}</td>
+                  <td class="amount">
+                    ${{ claim.billed_amount|floatformat:2 }}
+                  </td>
+                  <td
+                    class="amount {% if claim.paid_amount > 0 %}positive{% else %}negative{% endif %}"
+                  >
+                    ${{ claim.paid_amount|floatformat:2 }}
+                  </td>
+                  <td>
+                    <span class="status-badge status-{{ claim.status }}">
+                     {{ claim.get_status_display }}
+                    </span>
+                  </td>
+                  <td>{{ claim.insurer_name|default:"N/A" }}</td>
+                  <td>{{ claim.discharge_date|date:"m/d/Y" }}</td>
+                  <td>
+                    <div class="action-icons">
+                      <!-- View Details Icon -->
+                      <button 
+                        class="action-icon view-icon" 
+                        title="View Details"
+                        onclick="event.stopPropagation(); selectClaim('{{ claim.claim_id }}')"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      </button>
+                      
+                      <!-- Flag Icon -->
+                      <button 
+                        class="action-icon flag-icon" 
+                        title="Flag for Review"
+                        onclick="event.stopPropagation(); showFlagModal('{{ claim.claim_id }}')"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                          <line x1="4" y1="22" x2="4" y2="15"></line>
+                        </svg>
+                        {% if claim.flags.count > 0 %}
+                        <span class="flag-count">{{ claim.flags.count }}</span>
+                        {% endif %}
+                      </button>
+                      
+                      <!-- Note Icon -->
+                      <button 
+                        class="action-icon note-icon" 
+                        title="Add Note"
+                        onclick="event.stopPropagation(); showNoteModal('{{ claim.claim_id }}')"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14,2 14,8 20,8"></polyline>
+                          <line x1="16" y1="13" x2="8" y2="13"></line>
+                          <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        {% if claim.notes.count > 0 %}
+                        <span class="note-count">{{ claim.notes.count }}</span>
+                        {% endif %}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination-container">
+            <div class="pagination-info">
+              Showing {{ claims.start_index }} to {{ claims.end_index }} of {{ claims.paginator.count }} claims
+            </div>
+            <div class="pagination-controls">
+              {% if claims.has_previous %}
+                <a href="?{% url_replace request 'page' 1 %}" class="pagination-button">
+                  First
+                </a>
+                <a href="?{% url_replace request 'page' claims.previous_page_number %}" class="pagination-button">
+                  Previous
+                </a>
+              {% else %}
+                <span class="pagination-button disabled">First</span>
+                <span class="pagination-button disabled">Previous</span>
+              {% endif %}
+              
+              <span class="pagination-button active">
+                Page {{ claims.number }} of {{ claims.paginator.num_pages }}
+              </span>
+              
+              {% if claims.has_next %}
+                <a href="?{% url_replace request 'page' claims.next_page_number %}" class="pagination-button">
+                  Next
+                </a>
+                <a href="?{% url_replace request 'page' claims.paginator.num_pages %}" class="pagination-button">
+                  Last
+                </a>
+              {% else %}
+                <span class="pagination-button disabled">Next</span>
+                <span class="pagination-button disabled">Last</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel - Claim Details -->
+      <div class="right-panel">
+        <div class="detail-panel">
+          <div class="detail-header">
+            <h2 x-show="selectedClaim">
+              Claim Details - <span x-text="selectedClaim"></span>
+            </h2>
+            <h2 x-show="!selectedClaim">Claim Details</h2>
+          </div>
+
+          <div class="detail-content" id="claim-detail-content">
+            <div class="empty-state" x-show="!selectedClaim">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                ></path>
+                <polyline points="14,2 14,8 20,8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10,9 9,9 8,9"></polyline>
+              </svg>
+              <h3>Select a claim</h3>
+              <p>
+                Choose a claim from the list to view details and annotations
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flag Modal -->
+    <div id="flagModal" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title">Flag Claim for Review</h2>
+          <button class="close-btn" onclick="closeFlagModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="flagReason" class="form-label">Reason for flagging:</label>
+            <select id="flagReason" class="form-select">
+              <option value="Requires additional review">Requires additional review</option>
+              <option value="Potential duplicate">Potential duplicate</option>
+              <option value="Missing documentation">Missing documentation</option>
+              <option value="Billing discrepancy">Billing discrepancy</option>
+              <option value="Insurance verification needed">Insurance verification needed</option>
+              <option value="Other">Other (specify below)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="flagNotes" class="form-label">Additional notes (optional):</label>
+            <textarea id="flagNotes" class="form-textarea" placeholder="Enter additional details..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeFlagModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="submitFlag()">Flag Claim</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Note Modal -->
+    <div id="noteModal" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title">Add Note to Claim</h2>
+          <button class="close-btn" onclick="closeNoteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="noteContent" class="form-label">Note content:</label>
+            <textarea id="noteContent" class="form-textarea" placeholder="Enter your note here..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeNoteModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="submitNote()">Add Note</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentClaimId = null;
+
+      // Update Alpine.js data with new functions
+      document.addEventListener('alpine:init', () => {
+        Alpine.data('claimsApp', () => ({
+          selectedClaim: null
+        }));
+      });
+
+      // Select claim function for the view details
+      function selectClaim(claimId) {
+        // Update Alpine.js state
+        const app = document.querySelector('[x-data]');
+        if (app) {
+          app._x_dataStack[0].selectedClaim = claimId;
+        }
+        
+        // Load claim details via HTMX
+        htmx.ajax('GET', `/claims/${claimId}/`, {
+          target: '#claim-detail-content',
+          swap: 'innerHTML'
+        });
+      }
+
+      // Flag Modal Functions
+      function showFlagModal(claimId) {
+        currentClaimId = claimId;
+        document.getElementById('flagModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeFlagModal() {
+        document.getElementById('flagModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+        // Reset form
+        document.getElementById('flagReason').value = 'Requires additional review';
+        document.getElementById('flagNotes').value = '';
+      }
+
+      function submitFlag() {
+        if (!currentClaimId) return;
+        
+        const reason = document.getElementById('flagReason').value;
+        const notes = document.getElementById('flagNotes').value;
+        
+        let finalReason = reason;
+        if (reason === 'Other' && notes) {
+          finalReason = notes;
+        } else if (reason !== 'Other' && notes) {
+          finalReason = `${reason}: ${notes}`;
+        }
+
+        fetch(`/claims/${currentClaimId}/flag/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            reason: finalReason
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('Claim flagged successfully!', 'success');
+            closeFlagModal();
+            // Update flag count in the table
+            updateClaimCounts(currentClaimId, 'flag', data.flag_count);
+            // Refresh the claim detail panel
+            refreshClaimDetails(currentClaimId);
+          } else {
+            showNotification(data.message || 'Error flagging claim', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Error flagging claim', 'error');
+        });
+      }
+
+      // Note Modal Functions
+      function showNoteModal(claimId) {
+        currentClaimId = claimId;
+        document.getElementById('noteModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        document.getElementById('noteContent').focus();
+      }
+
+      function closeNoteModal() {
+        document.getElementById('noteModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+        // Reset form
+        document.getElementById('noteContent').value = '';
+      }
+
+      function submitNote() {
+        if (!currentClaimId) return;
+        
+        const content = document.getElementById('noteContent').value.trim();
+        
+        if (!content) {
+          showNotification('Please enter note content', 'error');
+          return;
+        }
+
+        fetch(`/claims/${currentClaimId}/note/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: content
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('Note added successfully!', 'success');
+            closeNoteModal();
+            // Update note count in the table
+            updateClaimCounts(currentClaimId, 'note', data.note_count);
+            // Refresh the claim detail panel
+            refreshClaimDetails(currentClaimId);
+          } else {
+            showNotification(data.message || 'Error adding note', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Error adding note', 'error');
+        });
+      }
+
+      // Notification system
+      function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        
+        // Style the notification
+        Object.assign(notification.style, {
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          color: 'white',
+          fontWeight: '500',
+          zIndex: '9999',
+          transform: 'translateX(100%)',
+          transition: 'transform 0.3s ease',
+          backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'
+        });
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+          notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+          notification.style.transform = 'translateX(100%)';
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 300);
+        }, 3000);
+      }
+
+      // Close modals when clicking overlay
+      document.getElementById('flagModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeFlagModal();
+        }
+      });
+
+      document.getElementById('noteModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeNoteModal();
+        }
+      });
+
+      // Close modals with Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeFlagModal();
+          closeNoteModal();
+          closeUserMenu();
+        }
+      });
+
+      // User menu functions
+      function toggleUserMenu() {
+        const dropdown = document.getElementById('userDropdown');
+        dropdown.classList.toggle('active');
+      }
+
+      function closeUserMenu() {
+        const dropdown = document.getElementById('userDropdown');
+        if (dropdown) {
+          dropdown.classList.remove('active');
+        }
+      }
+
+      // Close user menu when clicking outside
+      document.addEventListener('click', function(e) {
+        const userMenu = document.querySelector('.user-menu');
+        if (userMenu && !userMenu.contains(e.target)) {
+          closeUserMenu();
+        }
+      });
+
+      // Helper functions for updating UI without page reload
+      function updateClaimCounts(claimId, type, count) {
+        // Find the claim row
+        const claimRow = document.querySelector(`tr[data-claim-id="${claimId}"]`);
+        if (!claimRow) return;
+
+        // Find the appropriate count badge
+        const countBadge = claimRow.querySelector(`.${type}-count`);
+        
+        if (count > 0) {
+          if (countBadge) {
+            countBadge.textContent = count;
+          } else {
+            // Create new badge if it doesn't exist
+            const actionIcon = claimRow.querySelector(`.${type}-icon`);
+            if (actionIcon) {
+              const badge = document.createElement('span');
+              badge.className = `${type}-count`;
+              badge.textContent = count;
+              actionIcon.appendChild(badge);
+            }
+          }
+        }
+      }
+
+      function refreshClaimDetails(claimId) {
+        // Refresh the claim details panel
+        htmx.ajax('GET', `/claims/${claimId}/`, {
+          target: '#claim-detail-content',
+          swap: 'innerHTML'
+        });
+      }
+    </script>
+  </body>
+</html>

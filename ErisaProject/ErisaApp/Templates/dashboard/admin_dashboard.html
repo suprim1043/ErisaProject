@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - ERISA Recovery</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background-color: #f8f9fa;
+        line-height: 1.5;
+      }
+
+      .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .dashboard-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+      }
+
+      .dashboard-subtitle {
+        color: #6b7280;
+        font-size: 1rem;
+      }
+
+      .back-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 0.75rem 1.5rem;
+        background: #eff6ff;
+        border-radius: 8px;
+        transition: all 0.15s ease;
+      }
+
+      .back-link:hover {
+        background: #dbeafe;
+        transform: translateY(-1px);
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform 0.15s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      .stat-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+      }
+
+      .stat-icon.claims {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+      }
+      .stat-icon.flags {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+      }
+      .stat-icon.money {
+        background: linear-gradient(135deg, #10b981, #059669);
+      }
+      .stat-icon.users {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      }
+      .stat-icon.underpayment {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+      }
+
+      .stat-info h3 {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1f2937;
+      }
+
+      .stat-change {
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .stat-change.positive {
+        color: #059669;
+      }
+      .stat-change.negative {
+        color: #dc2626;
+      }
+
+      .charts-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .chart-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .chart-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 1.5rem;
+      }
+
+      .chart-container {
+        position: relative;
+        height: 300px;
+      }
+
+      .tables-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .table-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .table-header {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f8f9fa;
+      }
+
+      .table-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .data-table th {
+        padding: 1rem 2rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #374151;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f9fafb;
+      }
+
+      .data-table td {
+        padding: 1rem 2rem;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 0.9rem;
+      }
+
+      .data-table tbody tr:hover {
+        background: #f8f9fa;
+      }
+
+      .amount {
+        font-weight: 600;
+        text-align: right;
+      }
+
+      .amount.positive {
+        color: #059669;
+      }
+      .amount.negative {
+        color: #dc2626;
+      }
+
+      .badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: capitalize;
+      }
+
+      .badge.high {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .badge.medium {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .badge.low {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #2563eb);
+        transition: width 0.3s ease;
+      }
+
+      @media (max-width: 1024px) {
+        .charts-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .tables-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .dashboard-header {
+          flex-direction: column;
+          gap: 1rem;
+          text-align: center;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .dashboard-container {
+          padding: 1rem;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <div class="dashboard-header">
+        <div>
+          <h1 class="dashboard-title">Admin Dashboard</h1>
+          <p class="dashboard-subtitle">ERISA Recovery System Analytics</p>
+        </div>
+        <a href="{% url 'claims_list' %}" class="back-link">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M19 12H5"></path>
+            <polyline points="12,19 5,12 12,5"></polyline>
+          </svg>
+          Back to Claims
+        </a>
+      </div>
+
+      <!-- Key Statistics -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon claims">{{ total_claims|floatformat:0 }}</div>
+            <div class="stat-info">
+              <h3>Total Claims</h3>
+              <div class="stat-value">{{ total_claims|floatformat:0 }}</div>
+            </div>
+          </div>
+          <div class="stat-change positive">
+            <span>{{ recent_flags }} new flags (30 days)</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon money">$</div>
+            <div class="stat-info">
+              <h3>Total Underpayment</h3>
+              <div class="stat-value">
+                ${{ total_underpayment|floatformat:0 }}
+              </div>
+            </div>
+          </div>
+          <div class="stat-change negative">
+            <span
+              >{{ underpayment_percentage|floatformat:1 }}% of billed
+              amount</span
+            >
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon flags">🏳️</div>
+            <div class="stat-info">
+              <h3>Active Flags</h3>
+              <div class="stat-value">{{ total_flags }}</div>
+            </div>
+          </div>
+          <div class="stat-change">
+            <span>{{ flag_stats.resolved_flags }} resolved</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon underpayment">📊</div>
+            <div class="stat-info">
+              <h3>Avg Underpayment</h3>
+              <div class="stat-value">
+                ${{ avg_underpayment|floatformat:0 }}
+              </div>
+            </div>
+          </div>
+          <div class="stat-change">
+            <span>Per claim average</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon users">👥</div>
+            <div class="stat-info">
+              <h3>Total Notes</h3>
+              <div class="stat-value">{{ total_notes }}</div>
+            </div>
+          </div>
+          <div class="stat-change positive">
+            <span>{{ recent_notes }} recent (30 days)</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon users">👤</div>
+            <div class="stat-info">
+              <h3>Active Users</h3>
+              <div class="stat-value">{{ total_users }}</div>
+            </div>
+          </div>
+          <div class="stat-change">
+            <span>System users</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3 class="chart-title">Claims Trend (Last 12 Months)</h3>
+          <div class="chart-container">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3 class="chart-title">Claims by Status</h3>
+          <div class="chart-container">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Tables -->
+      <div class="tables-grid">
+        <div class="table-card">
+          <div class="table-header">
+            <h3 class="table-title">Top Insurers by Underpayment</h3>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Insurer</th>
+                <th>Claims</th>
+                <th>Underpayment</th>
+                <th>Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for insurer in top_insurers|slice:":8" %}
+              <tr>
+                <td>{{ insurer.insurer_name|truncatechars:25 }}</td>
+                <td>{{ insurer.claim_count }}</td>
+                <td class="amount negative">
+                  ${{ insurer.underpayment|floatformat:0 }}
+                </td>
+                <td>
+                  <span
+                    class="badge {% if insurer.underpayment_rate > 20 %}high{% elif insurer.underpayment_rate > 10 %}medium{% else %}low{% endif %}"
+                  >
+                    {{ insurer.underpayment_rate|floatformat:1 }}%
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <h3 class="table-title">High-Value Underpaid Claims</h3>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Claim ID</th>
+                <th>Patient</th>
+                <th>Underpayment</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for claim in high_value_underpaid|slice:":8" %}
+              <tr>
+                <td>
+                  <a
+                    href="{% url 'claims_list' %}#{{ claim.claim_id }}"
+                    style="color: #3b82f6; text-decoration: none"
+                  >
+                    {{ claim.claim_id }}
+                  </a>
+                </td>
+                <td>{{ claim.patient_name|truncatechars:20 }}</td>
+                <td class="amount negative">
+                  ${{ claim.underpayment|floatformat:0 }}
+                </td>
+                <td>
+                  <span
+                    class="badge {% if claim.status == 'denied' %}high{% elif claim.status == 'pending' %}medium{% else %}low{% endif %}"
+                  >
+                    {{ claim.status }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <h3 class="table-title">Claims Requiring Attention</h3>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Claim ID</th>
+                <th>Patient</th>
+                <th>Flags</th>
+                <th>Insurer</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for claim in flagged_claims|slice:":8" %}
+              <tr>
+                <td>
+                  <a
+                    href="{% url 'claims_list' %}#{{ claim.claim_id }}"
+                    style="color: #3b82f6; text-decoration: none"
+                  >
+                    {{ claim.claim_id }}
+                  </a>
+                </td>
+                <td>{{ claim.patient_name|truncatechars:20 }}</td>
+                <td>
+                  <span class="badge high">
+                    {{ claim.flag_count }} flag{{ claim.flag_count|pluralize }}
+                  </span>
+                </td>
+                <td>{{ claim.insurer_name|truncatechars:15 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <h3 class="table-title">Most Active Users</h3>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Notes</th>
+                <th>Flags</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in active_users %}
+              <tr>
+                <td>{{ user.first_name|default:user.username }}</td>
+                <td>{{ user.note_count }}</td>
+                <td>{{ user.flag_count }}</td>
+                <td>{{ user.total_activity }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Chart data from Django
+      const chartData = {{ chart_data|safe }};
+
+      // Monthly Claims Chart
+      const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+      new Chart(monthlyCtx, {
+          type: 'line',
+          data: {
+              labels: chartData.monthly_labels,
+              datasets: [{
+                  label: 'Claims Count',
+                  data: chartData.monthly_counts,
+                  borderColor: '#3b82f6',
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  tension: 0.4,
+                  fill: true
+              }, {
+                  label: 'Billed Amount ($)',
+                  data: chartData.monthly_billed,
+                  borderColor: '#10b981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  tension: 0.4,
+                  yAxisID: 'y1',
+                  fill: false
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                  y: {
+                      beginAtZero: true,
+                      position: 'left',
+                  },
+                  y1: {
+                      type: 'linear',
+                      display: true,
+                      position: 'right',
+                      grid: {
+                          drawOnChartArea: false,
+                      },
+                  }
+              },
+              plugins: {
+                  legend: {
+                      position: 'top',
+                  }
+              }
+          }
+      });
+
+      // Status Distribution Chart
+      const statusCtx = document.getElementById('statusChart').getContext('2d');
+      new Chart(statusCtx, {
+          type: 'doughnut',
+          data: {
+              labels: chartData.status_labels,
+              datasets: [{
+                  data: chartData.status_counts,
+                  backgroundColor: [
+                      '#3b82f6',
+                      '#10b981',
+                      '#f59e0b',
+                      '#ef4444',
+                      '#8b5cf6'
+                  ],
+                  borderWidth: 0
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  legend: {
+                      position: 'bottom',
+                  }
+              }
+          }
+      });
+    </script>
+  </body>
+</html>
